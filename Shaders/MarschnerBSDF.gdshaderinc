@@ -1,5 +1,5 @@
 /**
- * # Marschner adapted from https://github.com/Scthe/frostbitten-hair-webgpu/blob/master/src/passes/hairShadingPass/marschner.wgsl.ts
+ * # Marschner BSDF adapted from https://github.com/Scthe/frostbitten-hair-webgpu/blob/master/src/passes/hairShadingPass/marschner.wgsl.ts
  *
  * - [Marschner03] http://www.graphics.stanford.edu/papers/hair/hair-sg03final.pdf
  * - [Karis16] https://blog.selfshadow.com/publications/s2016-shading-course/karis/s2016_pbs_epic_hair.pdf
