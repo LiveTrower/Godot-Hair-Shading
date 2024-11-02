@@ -1,5 +1,5 @@
 /**
- * # Marschner BSDF adapted from https://github.com/Scthe/frostbitten-hair-webgpu/blob/master/src/passes/hairShadingPass/marschner.wgsl.ts
+ * # Marschner adapted from https://github.com/Scthe/frostbitten-hair-webgpu/blob/master/src/passes/hairShadingPass/marschner.wgsl.ts
  *
  * - [Marschner03] http://www.graphics.stanford.edu/papers/hair/hair-sg03final.pdf
  * - [Karis16] https://blog.selfshadow.com/publications/s2016-shading-course/karis/s2016_pbs_epic_hair.pdf
@@ -33,7 +33,7 @@ float cos_of_half_angle(float cos_angle) {
 /** https://blog.selfshadow.com/publications/s2016-shading-course/karis/s2016_pbs_epic_hair.pdf#page=18 */
 float longitudinal_scattering_gaussian(float sin_theta_i, float sin_theta_r, float alpha, float beta) {
 	float a = sin_theta_i + sin_theta_r - alpha; // sin(theta_i) + sin(theta_r) - alpha;
-	float b = -(a * a) / (2.0 * beta * beta);
+	float b = -(pow2(a)) / (2.0 * pow2(beta));
 	return exp(b) / (beta * SQRT_TWO_PI);
 }
 
@@ -44,15 +44,15 @@ float azimuthal_scattering_r(float cos_theta_d, float cos_half_phi) {
 }
 
 /** https://blog.selfshadow.com/publications/s2016-shading-course/karis/s2016_pbs_epic_hair.pdf#page=23 */
-vec3 azimuthal_scattering_tt(vec3 baseColor, float cos_theta_d, float cos_phi, float cos_half_phi) {
+vec3 azimuthal_scattering_tt(vec3 base_color, float cos_theta_d, float cos_phi, float cos_half_phi) {
 	float eta_prime = (1.19 / cos_theta_d) + (0.36 * cos_theta_d); // slide 26
 	float a = 1.0 / eta_prime; // slide 25, should be an alpha, but 'a' is less confusing
 	float h_TT = (1.0 + a * (0.6 - 0.8 * cos_phi)) * cos_half_phi; // slide 25
 
 	// slide 28: absorption term
-	float T_powNum = sqrt(1.0 - pow2(h_TT) * pow2(a));
+	float T_powNum = sqrt(1.0 - pow2(h_TT * a));
 	float T_powDenum = 2.0 * cos_theta_d;
-	vec3 T_TT = pow(abs(baseColor), vec3(0.5 * T_powNum / T_powDenum));
+	vec3 T_TT = pow(base_color, vec3(T_powNum / T_powDenum));
 	// slide 29: distribution
 	float D_TT = exp(-3.65 * cos_phi - 3.98);
 	// slide 25
@@ -64,9 +64,9 @@ vec3 azimuthal_scattering_tt(vec3 baseColor, float cos_theta_d, float cos_phi, f
 }
 
 /** https://blog.selfshadow.com/publications/s2016-shading-course/karis/s2016_pbs_epic_hair.pdf#page=32 */
-vec3 azimuthal_scattering_trt(vec3 baseColor, float cos_theta_d, float cos_phi) {
+vec3 azimuthal_scattering_trt(vec3 base_color, float cos_theta_d, float cos_phi) {
 	// slide 32: absorption term
-	vec3 T_TRT = pow(baseColor, vec3(0.8 / cos_theta_d));
+	vec3 T_TRT = pow(base_color, vec3(0.8 / cos_theta_d));
 	// slide 32: distribution
 	float D_TRT = exp(17.0 * cos_phi - 16.78);
 	// slide 32
@@ -91,15 +91,18 @@ vec3 specular_marschner(vec3 albedo, float specular, float roughness, vec3 light
 	float sin_theta_i = dot(tangent, light);
 	float sin_theta_r = dot(tangent, view);
 	// TODO [MEDIUM] does sign of cos matter for us?
-	float cos_theta_i = sqrt(max(0., 1. - pow2(sin_theta_i))); // Pythagorean Identity
-	float cos_theta_r = sqrt(max(0., 1. - pow2(sin_theta_r)));
+	float cos_theta_i = sqrt(max(0.0, 1.0 - pow2(sin_theta_i))); // Pythagorean Identity
+	float cos_theta_r = sqrt(max(0.0, 1.0 - pow2(sin_theta_r)));
 	// Cosine-difference formula: cos(α−β) = cosα ⋅ cosβ + sinα ⋅ sinβ
 	float cos_theta_d_fullAngle = cos_theta_i * cos_theta_r + sin_theta_i * sin_theta_r;
 	float cos_theta_d = cos_of_half_angle(cos_theta_d_fullAngle); // theta_d is half angle, see above
 	// GPU gems chapter 23, page 374
 	vec3 lightPerp = light - sin_theta_i * tangent;
 	vec3 cameraPerp = view - sin_theta_r * tangent;
-	float cos_phi = dot(lightPerp, cameraPerp) * inversesqrt(length(lightPerp) * length(cameraPerp) + 1e-4);
+	// Using dot() for lightPerp and cameraPerp improves performance by avoiding the costly square root operation in length().
+	// This approach leverages the squared magnitude (dot product with itself) and inversesqrt() for efficiency,
+	// providing an approximation that is sufficient for real-time graphics.
+	float cos_phi = dot(lightPerp, cameraPerp) * inversesqrt(dot(lightPerp, lightPerp) * dot(cameraPerp, cameraPerp) + 1e-4);
 	float cos_half_phi = cos_of_half_angle(cos_phi);
 
 	// For each lobe (R, TT, TRT):
@@ -107,14 +110,17 @@ vec3 specular_marschner(vec3 albedo, float specular, float roughness, vec3 light
 	// N_p(theta_i, theta_r, phi) - azimuthal scattering function
 
 	//Clamp roughness to avoid artifacts
-	float clamped_roughness = clamp(roughness, 1.0/255.0f, 1.0f);
+	float clamped_roughness = clamp(roughness, 1.0/255.0, 1.0);
+	float shift = 0.035;
 
 	// R: The light ray **REFLECTS** off the front of the hair fiber.
 	// Not much color (smth. like specular), as the light does not penetrate strand.
-	float shift = 0.035;
-	float alpha = 2.0 * -shift;
+	float alpha = -2.0 * shift;
+	float sin_alpha = sin(alpha);
+	float cos_alpha = cos(alpha);
+	float shift2 = 2.0 * sin_alpha * (cos_alpha * cos_half_phi * sqrt(1.0 - sin_theta_r * sin_theta_r) + sin_alpha * sin_theta_r);
 	float beta = pow2(clamped_roughness);
-	float M_r = longitudinal_scattering_gaussian(sin_theta_i, sin_theta_r, alpha, beta);
+	float M_r = longitudinal_scattering_gaussian(sin_theta_i, sin_theta_r, shift2, beta);
 	float N_r = azimuthal_scattering_r(cos_theta_d, cos_half_phi);
 	// TT: The light ray **TRANSMITS THROUGH** the front of the fiber,
 	// passes through the interior which colors it due to absorption
