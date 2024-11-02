@@ -1,7 +1,7 @@
 shader_type spatial;
 render_mode cull_disabled;
 
-#include "KajiyaKay.gdshaderinc"
+#include "KajiyaKayBSDF.gdshaderinc"
 
 group_uniforms Color;
 uniform vec3 root_color : source_color = vec3(0,0,0);
@@ -50,7 +50,11 @@ void light()
 	vec3 V = normalize(VIEW);
 	vec3 L = normalize(LIGHT);
 
+	// Energy conserving lambert wrap shader.
+	// https://web.archive.org/web/20210228210901/http://blog.stevemcauley.com/2011/12/03/energy-conserving-wrapped-diffuse/
+	// Simulates multiple scattering very well.
 	float ambientdiffuse = max(0.0, (dot(N, L) + ROUGHNESS) / ((1.0 + ROUGHNESS) * (1.0 + ROUGHNESS))) * (1.0 / PI) * scatter;
+
 	vec3 specular = specular_kajiya_kay(shift_tex, primary_color, primary_shift, secondary_color, secondary_shift, N, B, V, L, specular_power, specular_width, specular_scale);
 
 	DIFFUSE_LIGHT += ambientdiffuse * LIGHT_COLOR * ATTENUATION;
