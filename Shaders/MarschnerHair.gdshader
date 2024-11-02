@@ -1,5 +1,3 @@
-//Credits
-//https://github.com/maajor/Marschner-Hair-Unity
 shader_type spatial;
 render_mode cull_disabled;
 
@@ -57,7 +55,12 @@ void light(){
 	mediump vec3 N = normalize(NORMAL);
 	mediump vec3 B = normalize(binormal);
 	vec3 L = normalize(LIGHT);
+
+	// Energy conserving lambert wrap shader.
+	// https://web.archive.org/web/20210228210901/http://blog.stevemcauley.com/2011/12/03/energy-conserving-wrapped-diffuse/
+	// Simulates multiple scattering very well.
 	float diff = max(0.0, (dot(N, L) + ROUGHNESS) / ((1.0 + ROUGHNESS) * (1.0 + ROUGHNESS))) * (1.0 / PI) * scatter;
+
 	vec3 spec = specular_marschner(ALBEDO, specular, ROUGHNESS, L, V, B);
 	
 	DIFFUSE_LIGHT += diff * LIGHT_COLOR * ATTENUATION;
