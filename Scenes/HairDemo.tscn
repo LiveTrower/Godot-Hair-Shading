@@ -55,7 +55,7 @@ length = 0.001
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_5soj8"]
 _data = {
-"Take 001": SubResource("Animation_c16o6")
+&"Take 001": SubResource("Animation_c16o6")
 }
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_a7tnp"]
@@ -104,7 +104,7 @@ length = 0.001
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_8qnku"]
 _data = {
-"Take 001": SubResource("Animation_p8f6t")
+&"Take 001": SubResource("Animation_p8f6t")
 }
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_44qbw"]
@@ -160,7 +160,7 @@ length = 0.001
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_xg05g"]
 _data = {
-"Take 001": SubResource("Animation_05v18")
+&"Take 001": SubResource("Animation_05v18")
 }
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_ifrco"]
@@ -266,7 +266,7 @@ surface_material_override/0 = ExtResource("1_x5uis")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Hair1"]
 libraries = {
-"": SubResource("AnimationLibrary_5soj8")
+&"": SubResource("AnimationLibrary_5soj8")
 }
 
 [node name="Hair2" type="Node3D" parent="."]
@@ -285,7 +285,7 @@ surface_material_override/0 = ExtResource("3_e230e")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Hair2"]
 libraries = {
-"": SubResource("AnimationLibrary_8qnku")
+&"": SubResource("AnimationLibrary_8qnku")
 }
 
 [node name="Head" type="Node3D" parent="."]
@@ -301,7 +301,7 @@ surface_material_override/0 = SubResource("StandardMaterial3D_1oomw")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="Head"]
 libraries = {
-"": SubResource("AnimationLibrary_xg05g")
+&"": SubResource("AnimationLibrary_xg05g")
 }
 
 [node name="Floor" type="MeshInstance3D" parent="."]
@@ -361,6 +361,7 @@ theme_override_font_sizes/font_size = 20
 selected = 1
 item_count = 4
 popup/item_0/text = "Disabled"
+popup/item_0/id = 0
 popup/item_1/text = "TAA"
 popup/item_1/id = 1
 popup/item_2/text = "FXAA"
@@ -379,6 +380,7 @@ theme_override_font_sizes/font_size = 20
 selected = 0
 item_count = 2
 popup/item_0/text = "Hair1"
+popup/item_0/id = 0
 popup/item_1/text = "Hair2"
 popup/item_1/id = 1
 
@@ -393,6 +395,7 @@ theme_override_font_sizes/font_size = 20
 selected = 0
 item_count = 2
 popup/item_0/text = "Marschner"
+popup/item_0/id = 0
 popup/item_1/text = "Kajiya Kay"
 popup/item_1/id = 1
 
@@ -406,6 +409,7 @@ layout_mode = 2
 selected = 0
 item_count = 2
 popup/item_0/text = "OmniLight"
+popup/item_0/id = 0
 popup/item_1/text = "Directional"
 popup/item_1/id = 1
 
